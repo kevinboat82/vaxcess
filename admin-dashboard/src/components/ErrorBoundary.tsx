@@ -1,4 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RotateCcw } from 'lucide-react';
 
 interface Props {
@@ -42,7 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
                             The application encountered an unexpected error. This might be due to an invalid session or temporary connection issue.
                         </p>
 
-                        {process.env.NODE_ENV === 'development' && (
+                        {import.meta.env.DEV && (
                             <div className="bg-slate-900 text-rose-400 p-4 rounded-xl text-xs font-mono text-left mb-8 overflow-auto max-h-32">
                                 {this.state.error?.message}
                             </div>
@@ -68,6 +69,6 @@ export class ErrorBoundary extends Component<Props, State> {
             );
         }
 
-        return this.children;
+        return this.props.children;
     }
 }
