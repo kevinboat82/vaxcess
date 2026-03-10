@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # Database Layer
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./src/db/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - vaxcess_network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vaxcess_user} -d ${POSTGRES_DB:-vaxcess_db}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Express API Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 3000
+    volumes:
+      - ./logs:/app/logs # Persist Winston logs outside the container
+    ports:
+      - "3000:3000"
+    networks:
+      - vaxcess_network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # React + Vite Frontend (Served by Nginx)
+  frontend:
+    build:
+      context: ./admin-dashboard
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "80:80" # Map host port 80 to container port 80
+    networks:
+      - vaxcess_network
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+
+
+networks:
+  vaxcess_network:
+    driver: bridge
