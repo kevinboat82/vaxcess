@@ -25,9 +25,8 @@ services:
         value: production
 
   # React + Vite Frontend
-  - type: static
+  - type: static_site
     name: vaxcess-frontend
-    runtime: static
     plan: free
     region: oregon
     buildCommand: cd admin-dashboard && npm install && npm run build
