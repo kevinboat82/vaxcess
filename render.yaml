@@ -1,12 +1,11 @@
-services:
-  # Managed PostgreSQL Database
-  - type: database
-    name: vaxcess-db
+databases:
+  - name: vaxcess-db
     plan: free
     region: oregon
     databaseName: vaxcess_db
     user: vaxcess_user
 
+services:
   # Express API Backend
   - type: web
     name: vaxcess-backend
