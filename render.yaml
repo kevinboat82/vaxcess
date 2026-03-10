@@ -29,7 +29,6 @@ services:
     name: vaxcess-frontend
     runtime: static
     plan: free
-    region: oregon
     buildCommand: cd admin-dashboard && npm install && npm run build
     staticPublishPath: admin-dashboard/dist
     envVars:
