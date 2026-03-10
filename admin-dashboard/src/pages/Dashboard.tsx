@@ -60,7 +60,7 @@ const Dashboard: React.FC = () => {
         fetchDashboardData();
     }, []);
 
-    const filteredWorkers = workers.filter(w =>
+    const filteredWorkers = (workers || []).filter(w =>
         w.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
         w.facility_name.toLowerCase().includes(searchTerm.toLowerCase())
     );

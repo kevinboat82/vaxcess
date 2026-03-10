@@ -42,7 +42,7 @@ const Registry: React.FC = () => {
         fetchRegistry();
     }, []);
 
-    const filteredChildren = children.filter(c =>
+    const filteredChildren = (children || []).filter(c =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.caregiver_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.phone_number.includes(searchTerm)

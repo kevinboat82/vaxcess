@@ -25,15 +25,16 @@ const UpcomingTracker: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'overdue' | 'dueSoon' | 'future'>('overdue');
 
     const counts = useMemo(() => {
+        const list = (schedules || []);
         return {
-            overdue: schedules.filter((s) => s.days_remaining < 0).length,
-            dueSoon: schedules.filter((s) => s.days_remaining >= 0 && s.days_remaining <= 7).length,
-            future: schedules.filter((s) => s.days_remaining > 7).length,
+            overdue: list.filter((s) => s.days_remaining < 0).length,
+            dueSoon: list.filter((s) => s.days_remaining >= 0 && s.days_remaining <= 7).length,
+            future: list.filter((s) => s.days_remaining > 7).length,
         };
     }, [schedules]);
 
     const groupedSchedules = useMemo(() => {
-        const filtered = schedules.filter((s) =>
+        const filtered = (schedules || []).filter((s) =>
             s.child_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             s.caregiver_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             s.phone_number.includes(searchTerm) ||
