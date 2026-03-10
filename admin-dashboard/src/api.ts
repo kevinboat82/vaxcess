@@ -21,14 +21,21 @@ api.interceptors.request.use(
 // Response Interceptor: Handle global 401s (Token expiration) gracefully
 api.interceptors.response.use(
     (response) => {
-        // Defensive check: If an endpoint is expected to return an array but returns an object/HTML
+        // Defensive check: If an endpoint is expected to return JSON but returns HTML (string)
         // this is usually a sign of a proxy misconfiguration or server crash returning a generic error page.
-        const listEndpoints = ['/auth/workers', '/children/registry', '/schedule/upcoming'];
+        const isJsonRequest = !response.config.url?.endsWith('.js') && !response.config.url?.endsWith('.css');
+
+        if (isJsonRequest && typeof response.data === 'string' && response.data.trim().startsWith('<!DOCTYPE')) {
+            console.error(`[API Error] Received HTML instead of JSON from ${response.config.url}. Possible proxy issue.`);
+            console.debug('[API Error Content Snippet]:', response.data.substring(0, 200));
+            // Return empty versions to prevent crashes
+            response.data = response.config.url?.includes('overview') ? {} : [];
+        }
+
+        const listEndpoints = ['/auth/workers', '/children/registry', '/schedule/upcoming', '/analytics/charts'];
         const isListEndpoint = listEndpoints.some(url => response.config.url?.includes(url));
 
         if (isListEndpoint && !Array.isArray(response.data)) {
-            console.error(`[API Error] Expected array from ${response.config.url} but got:`, typeof response.data);
-            // Fallback to empty array to prevent .filter() crashes
             response.data = [];
         }
 

@@ -79,7 +79,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div>
                         <h3 className="text-2xl lg:text-3xl font-bold text-slate-800 tracking-tight">
-                            {isLoading ? '...' : metrics?.total_children.toLocaleString() || '0'}
+                            {isLoading ? '...' : metrics?.total_children?.toLocaleString() || '0'}
                         </h3>
                         <p className="text-xs lg:text-sm font-medium text-slate-500 mt-1">Children Patrons</p>
                     </div>
@@ -94,7 +94,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div>
                         <h3 className="text-2xl lg:text-3xl font-bold text-slate-800 tracking-tight">
-                            {isLoading ? '...' : metrics?.total_caregivers.toLocaleString() || '0'}
+                            {isLoading ? '...' : metrics?.total_caregivers?.toLocaleString() || '0'}
                         </h3>
                         <p className="text-xs lg:text-sm font-medium text-slate-500 mt-1">Primary Caregivers</p>
                     </div>
@@ -109,7 +109,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div>
                         <h3 className="text-2xl lg:text-3xl font-bold text-slate-800 tracking-tight">
-                            {isLoading ? '...' : metrics?.total_vaccines_administered.toLocaleString() || '0'}
+                            {isLoading ? '...' : metrics?.total_vaccines_administered?.toLocaleString() || '0'}
                         </h3>
                         <p className="text-xs lg:text-sm font-medium text-slate-500 mt-1">EPI Doses Given</p>
                     </div>
@@ -124,7 +124,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div>
                         <h3 className="text-2xl lg:text-3xl font-bold text-slate-800 tracking-tight text-amber-600">
-                            {isLoading ? '...' : metrics?.total_vaccines_pending.toLocaleString() || '0'}
+                            {isLoading ? '...' : metrics?.total_vaccines_pending?.toLocaleString() || '0'}
                         </h3>
                         <p className="text-xs lg:text-sm font-medium text-amber-700/70 mt-1">Pending Pipelines</p>
                     </div>
