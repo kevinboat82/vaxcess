@@ -14,8 +14,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [token, setToken] = useState<string | null>(localStorage.getItem('vaxcess_admin_token'));
     const [role, setRole] = useState<string | null>(() => {
         const stored = localStorage.getItem('vaxcess_admin_token');
-        if (stored) {
-            try { return JSON.parse(atob(stored.split('.')[1])).role; } catch (e) { return null; }
+        if (stored && stored.includes('.')) {
+            try {
+                const payload = stored.split('.')[1];
+                if (payload) {
+                    return JSON.parse(atob(payload)).role;
+                }
+            } catch (e) {
+                console.warn('Failed to parse existing token:', e);
+                return null;
+            }
         }
         return null;
     });
@@ -23,10 +31,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const login = (newToken: string) => {
         setToken(newToken);
         localStorage.setItem('vaxcess_admin_token', newToken);
-        try {
-            setRole(JSON.parse(atob(newToken.split('.')[1])).role);
-        } catch (e) {
-            setRole(null);
+        if (newToken && newToken.includes('.')) {
+            try {
+                const payload = newToken.split('.')[1];
+                if (payload) {
+                    setRole(JSON.parse(atob(payload)).role);
+                }
+            } catch (e) {
+                console.error('Failed to parse login token:', e);
+                setRole(null);
+            }
         }
     };
 
