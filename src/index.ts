@@ -22,6 +22,11 @@ dotenv.config();
 
 const app = express();
 app.set('trust proxy', 1); // Trust first-hop proxy (Nginx) for Rate Limiting
+
+// ** PARSERS MUST BE EARLY **
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 const PORT = process.env.PORT || 3000;
 
 // Global HTTP Request Logging

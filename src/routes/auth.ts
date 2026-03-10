@@ -45,7 +45,14 @@ router.post('/register', requireAuth, requireAdmin, async (req, res) => {
  */
 router.post('/login', async (req, res) => {
     try {
+        if (!req.body) {
+            return res.status(400).json({ error: 'Missing request body' });
+        }
         const { username, password } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({ error: 'Username and password are required' });
+        }
 
         const result = await query(`SELECT * FROM Health_Workers WHERE username = $1`, [username]);
         if (result.rows.length === 0) {
