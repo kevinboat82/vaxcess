@@ -8,7 +8,8 @@
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "test": "jest",
-    "migrate:airtable": "ts-node src/scripts/migrate-airtable.ts"
+    "migrate:airtable": "ts-node src/scripts/migrate-airtable.ts",
+    "create-admin": "ts-node src/scripts/create-admin.ts"
   },
   "keywords": [],
   "author": "",
