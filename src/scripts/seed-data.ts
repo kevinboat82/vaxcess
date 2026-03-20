@@ -16,16 +16,16 @@ async function seedData() {
         // 1. Create a sample caregiver if none exists
         const caregiverId = uuidv4();
         await pool.query(`
-            INSERT INTO Caregivers (id, first_name, last_name, phone_number, relationship_to_child)
-            VALUES ($1, 'Jane', 'Doe', '+1234567890', 'Mother')
+            INSERT INTO Caregivers (id, name, phone_number, relationship_to_child)
+            VALUES ($1, 'Jane Doe', '+1234567890', 'Mother')
             ON CONFLICT DO NOTHING
         `, [caregiverId]);
 
         // 2. Create a sample child if none exists
         const childId = uuidv4();
         await pool.query(`
-            INSERT INTO Children (id, first_name, last_name, date_of_birth, gender, caregiver_id)
-            VALUES ($1, 'John', 'Doe Jr.', '2023-01-15', 'MALE', $2)
+            INSERT INTO Children (id, name, dob, gender, caregiver_id)
+            VALUES ($1, 'John Doe Jr.', '2023-01-15', 'MALE', $2)
             ON CONFLICT DO NOTHING
         `, [childId, caregiverId]);
 
@@ -43,18 +43,18 @@ async function seedData() {
             const doses = Math.floor(Math.random() * 5) + 5;
             for (let i = 0; i < doses; i++) {
                 await pool.query(`
-                    INSERT INTO Schedules (id, child_id, vaccine_name, due_date, administered_date, status)
-                    VALUES ($1, $2, $3, $4, $5, 'COMPLETED')
-                `, [uuidv4(), childId, 'BCG', dateStr, dateStr]);
+                    INSERT INTO Schedules (id, child_id, vaccine_id, due_date, administered_date, status, window_start, window_end)
+                    VALUES ($1, $2, 'v-bcg', $3, $4, 'COMPLETED', $3, $3)
+                `, [uuidv4(), childId, dateStr, dateStr]);
             }
         }
 
         // 5. Create some pending/overdue schedules for the pie chart
         await pool.query(`
-            INSERT INTO Schedules (id, child_id, vaccine_name, due_date, status)
+            INSERT INTO Schedules (id, child_id, vaccine_id, due_date, status, window_start, window_end)
             VALUES 
-            ($1, $2, 'Polio 1', CURRENT_DATE + INTERVAL '10 days', 'PENDING'),
-            ($3, $2, 'Measles', CURRENT_DATE - INTERVAL '5 days', 'PENDING')
+            ($1, $2, 'v-penta1', CURRENT_DATE + INTERVAL '10 days', 'PENDING', CURRENT_DATE + INTERVAL '10 days', CURRENT_DATE + INTERVAL '10 days'),
+            ($3, $2, 'v-measles1', CURRENT_DATE - INTERVAL '5 days', 'PENDING', CURRENT_DATE - INTERVAL '5 days', CURRENT_DATE - INTERVAL '5 days')
         `, [uuidv4(), childId, uuidv4()]);
 
         console.log('✅ Seeding completed successfully!');
