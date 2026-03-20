@@ -16,8 +16,8 @@ async function seedData() {
         // 1. Create a sample caregiver if none exists
         const caregiverId = uuidv4();
         await pool.query(`
-            INSERT INTO Caregivers (id, name, phone_number, relationship_to_child)
-            VALUES ($1, 'Jane Doe', '+1234567890', 'Mother')
+            INSERT INTO Caregivers (id, name, phone_number)
+            VALUES ($1, 'Jane Doe', '+1234567890')
             ON CONFLICT DO NOTHING
         `, [caregiverId]);
 
