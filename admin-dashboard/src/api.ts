@@ -32,7 +32,7 @@ api.interceptors.response.use(
             response.data = response.config.url?.includes('overview') ? {} : [];
         }
 
-        const listEndpoints = ['/auth/workers', '/children/registry', '/schedule/upcoming', '/analytics/charts'];
+        const listEndpoints = ['/auth/workers', '/children/registry', '/schedule/upcoming'];
         const isListEndpoint = listEndpoints.some(url => response.config.url?.includes(url));
 
         if (isListEndpoint && !Array.isArray(response.data)) {

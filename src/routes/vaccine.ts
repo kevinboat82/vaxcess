@@ -152,66 +152,84 @@ router.post('/recalculate', requireAuth, requireAdmin, (req, res) => {
  * @desc Manually mark a pending vaccine schedule as completed
  */
 router.patch('/:id/complete', requireAuth, requireAdmin, async (req, res) => {
+    const { pool } = require('../db');
+    const client = await pool.connect();
+
     try {
         const id = req.params.id as string;
-        const { query } = require('../db');
+        await client.query('BEGIN');
 
-        // Verify the schedule exists and is pending
-        const checkRes = await query(`SELECT status FROM Schedules WHERE id = $1`, [id]);
+        // 1. Lock the row for update to prevent concurrent modifications
+        const lockQuery = `
+            SELECT status, vaccine_id, child_id 
+            FROM Schedules 
+            WHERE id = $1 
+            FOR UPDATE SKIP LOCKED
+        `;
+        const checkRes = await client.query(lockQuery, [id]);
 
         if (checkRes.rows.length === 0) {
-            return res.status(404).json({ error: 'Schedule not found' });
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Schedule not found or already being processed' });
         }
 
         if (checkRes.rows[0].status === 'COMPLETED') {
+            await client.query('ROLLBACK');
             return res.status(400).json({ error: 'Schedule is already completed' });
         }
 
-        // Update the status and timestamp
-        await query(
-            `UPDATE Schedules 
-             SET status = 'COMPLETED', administered_date = NOW(), updated_at = NOW() 
-             WHERE id = $1`,
-            [id]
-        );
+        const scheduleDetail = checkRes.rows[0];
 
-        // Fetch details for potential incentive payout
-        const detailQuery = `
-            SELECT s.vaccine_id, c.caregiver_id, c.id as child_id
-            FROM Schedules s
-            JOIN Children c ON s.child_id = c.id
-            WHERE s.id = $1
-        `;
-        const detailRes = await query(detailQuery, [id]);
-        const scheduleDetail = detailRes.rows[0];
+        // 2. Fetch caregiver details (still inside transaction)
+        const childRes = await client.query(`SELECT caregiver_id FROM Children WHERE id = $1`, [scheduleDetail.child_id]);
+        const caregiverId = childRes.rows[0].caregiver_id;
 
-        // Define milestone vaccines that trigger MoMo payouts (e.g., Penta 3, Measles 1)
+        // 3. Check Eligibility (passing the transaction client)
         const MILESTONE_VACCINES = ['v-penta3', 'v-measles1', 'v-measles2'];
         let payoutStatus = 'No payout triggered';
 
         if (MILESTONE_VACCINES.includes(scheduleDetail.vaccine_id)) {
-            const isEligible = await verifyIncentiveEligibility(id, new Date());
+            const isEligible = await verifyIncentiveEligibility(id, new Date(), client);
 
             if (isEligible) {
                 payoutStatus = await triggerMoMoIncentive({
-                    visitId: id, // Using schedule ID as visit ID for this implementation
-                    caregiverId: scheduleDetail.caregiver_id,
+                    visitId: id,
+                    caregiverId: caregiverId,
                     scheduleId: id,
-                    amount: 10.00 // Example milestone amount in GHS
-                });
+                    amount: 10.00
+                }, client);
                 logger.info(`Incentive triggered for schedule ${id}: ${payoutStatus}`);
             } else {
                 payoutStatus = 'Not eligible (outside window)';
             }
         }
 
+        // 4. Update the status
+        await client.query(
+            `UPDATE Schedules 
+             SET status = 'COMPLETED', administered_date = NOW(), updated_at = NOW() 
+             WHERE id = $1`,
+            [id]
+        );
+
+        await client.query('COMMIT');
+
         res.status(200).json({
             message: 'Vaccine marked as completed successfully',
             payout_status: payoutStatus
         });
-    } catch (error) {
+    } catch (error: any) {
+        await client.query('ROLLBACK');
         logger.error('Error completing vaccine schedule:', error);
+        
+        // Handle custom validation errors gracefully
+        if (error.message?.includes('Invalid schedule')) {
+            return res.status(400).json({ error: error.message });
+        }
+        
         res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        client.release();
     }
 });
 

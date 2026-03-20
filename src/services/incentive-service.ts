@@ -18,8 +18,9 @@ interface PaymentContext {
 /**
  * 1. Verification Step: Ensure dose was given in the allowed window
  */
-export async function verifyIncentiveEligibility(scheduleId: string, administeredDate: Date): Promise<boolean> {
-    const result = await query(`SELECT * FROM Schedules WHERE id = $1`, [scheduleId]);
+export async function verifyIncentiveEligibility(scheduleId: string, administeredDate: Date, client?: any): Promise<boolean> {
+    const db = client || { query };
+    const result = await db.query(`SELECT * FROM Schedules WHERE id = $1`, [scheduleId]);
 
     if (result.rows.length === 0) {
         throw new Error("Invalid schedule.");
@@ -41,13 +42,14 @@ export async function verifyIncentiveEligibility(scheduleId: string, administere
 /**
  * 2. Payment Execution Step: Idempotent MoMo Trigger
  */
-export async function triggerMoMoIncentive(context: PaymentContext): Promise<string> {
+export async function triggerMoMoIncentive(context: PaymentContext, client?: any): Promise<string> {
+    const db = client || { query };
     // Generate a rigorous Idempotency Key based on exact Visit and Schedule
     // This guarantees that retrying this exact function will NOT trigger a double payment
     const idempotencyKey = `PAY_V1_${context.visitId}_${context.scheduleId}`;
 
     // Check if payment already exists (or is processing) in the DB
-    const existingPayment = await query('SELECT status FROM Payments WHERE idempotency_key = $1', [idempotencyKey]);
+    const existingPayment = await db.query('SELECT status FROM Payments WHERE idempotency_key = $1', [idempotencyKey]);
 
     if (existingPayment.rows.length > 0) {
         return `Payment already ${existingPayment.rows[0].status} for key: ${idempotencyKey}`;
@@ -55,7 +57,7 @@ export async function triggerMoMoIncentive(context: PaymentContext): Promise<str
 
     // Register PENDING payment in DB before talking to external API
     const paymentId = uuidv4();
-    await query(
+    await db.query(
         `INSERT INTO Payments (id, caregiver_id, visit_id, idempotency_key, amount, status) 
          VALUES ($1, $2, $3, $4, $5, 'PENDING')`,
         [paymentId, context.caregiverId, context.visitId, idempotencyKey, context.amount]
@@ -71,13 +73,13 @@ export async function triggerMoMoIncentive(context: PaymentContext): Promise<str
         });
 
         if (response.success) {
-            await query(`UPDATE Payments SET status = 'SUCCESS' WHERE id = $1`, [paymentId]);
+            await db.query(`UPDATE Payments SET status = 'SUCCESS' WHERE id = $1`, [paymentId]);
             return "Payment successful.";
         } else {
             throw new Error("Provider rejected transfer.");
         }
     } catch (error) {
-        await query(`UPDATE Payments SET status = 'FAILED' WHERE id = $1`, [paymentId]);
+        await db.query(`UPDATE Payments SET status = 'FAILED' WHERE id = $1`, [paymentId]);
         throw error;
     }
 }

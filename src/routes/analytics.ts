@@ -67,9 +67,10 @@ router.get('/charts', async (req, res) => {
                 COUNT(*) as count
             FROM Schedules
             WHERE status = 'COMPLETED' 
-              AND administered_date >= CURRENT_DATE - INTERVAL '6 months'
+              AND administered_date IS NOT NULL
             GROUP BY TO_CHAR(administered_date, 'Mon YYYY'), DATE_TRUNC('month', administered_date)
-            ORDER BY DATE_TRUNC('month', administered_date) ASC
+            ORDER BY DATE_TRUNC('month', administered_date) DESC
+            LIMIT 12
         `;
         const trendRes = await query(trendQuery);
 
@@ -82,7 +83,7 @@ router.get('/charts', async (req, res) => {
         const barChartData = trendRes.rows.map(row => ({
             month: row.month,
             vaccines: parseInt(row.count, 10)
-        }));
+        })).reverse();
 
         res.status(200).json({
             distribution: pieChartData,
