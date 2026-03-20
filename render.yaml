@@ -37,5 +37,8 @@ services:
           property: host
     routes:
       - type: rewrite
+        source: /api/*
+        destination: https://vaxcess-backend.onrender.com/api/*
+      - type: rewrite
         source: /*
         destination: /index.html
