@@ -32,10 +32,7 @@ services:
     staticPublishPath: admin-dashboard/dist
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: vaxcess-backend
-          property: host
+        value: /api
     routes:
       - type: rewrite
         source: /api/*
