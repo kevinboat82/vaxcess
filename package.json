@@ -10,7 +10,8 @@
     "test": "jest",
     "migrate:airtable": "ts-node src/scripts/migrate-airtable.ts",
     "create-admin": "ts-node src/scripts/create-admin.ts",
-    "seed": "ts-node src/scripts/seed-data.ts"
+    "seed": "ts-node src/scripts/seed-data.ts",
+    "init-db": "ts-node src/scripts/init-db.ts"
   },
   "keywords": [],
   "author": "",
