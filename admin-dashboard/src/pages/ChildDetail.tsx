@@ -11,7 +11,8 @@ import api from '../api';
 
 interface Schedule {
     id: string;
-    vaccine_id: string; // Acts as the name temporarily based on our core logic
+    vaccine_id: string;
+    vaccine_display_name?: string;
     due_date: string;
     window_start: string;
     window_end: string;
@@ -324,7 +325,7 @@ const ChildDetail: React.FC = () => {
                                                 {getStatusBadge(schedule.status)}
                                             </td>
                                             <td className="px-6 py-4 font-bold text-slate-900 uppercase">
-                                                {schedule.vaccine_id.replace('v-', '').replace(/([A-Z])/g, ' $1').trim()}
+                                                {schedule.vaccine_display_name || schedule.vaccine_id?.replace('v-', '').replace(/([A-Z])/g, ' $1').trim()}
                                             </td>
                                             <td className="px-6 py-4 font-medium text-slate-700">
                                                 {new Date(schedule.due_date).toLocaleDateString()}
@@ -375,7 +376,7 @@ const ChildDetail: React.FC = () => {
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <h4 className="font-black text-slate-900 uppercase tracking-tight text-lg leading-none mb-1">
-                                                {schedule.vaccine_id.replace('v-', '').replace(/([A-Z])/g, ' $1').trim()}
+                                                {schedule.vaccine_display_name || schedule.vaccine_id?.replace('v-', '').replace(/([A-Z])/g, ' $1').trim()}
                                             </h4>
                                             <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">Target Dose</p>
                                         </div>

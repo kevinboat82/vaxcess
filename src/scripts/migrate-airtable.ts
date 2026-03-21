@@ -85,7 +85,7 @@ async function syncVaccineMeta() {
     logger.info("✅ Vaccine Metadata synchronized.");
 }
 
-async function migrate() {
+export async function migrate() {
     logger.info("🚀 Starting Advanced Airtable Migration Vector (V2)...");
 
     try {
@@ -245,12 +245,10 @@ async function migrate() {
         logger.info(`✅ Successfully migrated ${childrenInserted} Children.`);
         logger.info(`💉 Successfully reconstructed ${schedulesInserted} Historical Vaccination Timelines.`);
         logger.info("🎉 Migration Complete! Patients now possess retroactive EPI histories.");
-        process.exit(0);
+        return { caregiversInserted, childrenInserted, schedulesInserted };
 
     } catch (error: any) {
         logger.error("🚨 MIGRATION CATASTROPHE:", error);
-        process.exit(1);
+        throw error;
     }
 }
-
-migrate();

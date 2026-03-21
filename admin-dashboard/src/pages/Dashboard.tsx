@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Users, Activity, Syringe, CalendarClock, PieChart as PieChartIcon, TrendingUp } from 'lucide-react';
+import { Plus, Search, Users, Activity, Syringe, CalendarClock, PieChart as PieChartIcon, TrendingUp, RefreshCw } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
@@ -37,6 +37,23 @@ const Dashboard: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isWorkerModalOpen, setIsWorkerModalOpen] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    const handleSyncAirtable = async () => {
+        if (!window.confirm('Trigger full synchronization with Airtable? This will refresh all patient records.')) return;
+        
+        try {
+            setIsSyncing(true);
+            const response = await api.post('/sync/airtable');
+            alert(`Sync complete! ${response.data.stats.childrenInserted} children records processed.`);
+            fetchDashboardData();
+        } catch (error: any) {
+            console.error("Sync failed", error);
+            alert(error.response?.data?.error || "Failed to synchronize with Airtable.");
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     const fetchDashboardData = async () => {
         try {
@@ -67,6 +84,16 @@ const Dashboard: React.FC = () => {
 
     return (
         <Layout title="System Overview">
+            <div className="flex justify-end mb-6">
+                <button
+                    onClick={handleSyncAirtable}
+                    disabled={isSyncing}
+                    className={`flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-bold shadow-md hover:bg-slate-700 transition-all ${isSyncing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                    <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                    {isSyncing ? 'Syncing Airtable...' : 'Sync with Airtable'}
+                </button>
+            </div>
 
             {/* Top Level Meta Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">

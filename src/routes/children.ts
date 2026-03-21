@@ -59,8 +59,10 @@ router.get('/:id/details', requireAuth, async (req, res) => {
         // Because Vaccine_Meta might still be a mock or empty in early stages, we use a LEFT JOIN 
         // fallback to the vaccine_id directly if meta is missing.
         const scheduleResult = await query(`
-            SELECT s.id, s.vaccine_id, s.due_date, s.window_start, s.window_end, s.status, s.administered_date
+            SELECT s.id, s.vaccine_id, s.due_date, s.window_start, s.window_end, s.status, s.administered_date,
+                   vm.vaccine_name as vaccine_display_name
             FROM Schedules s
+            LEFT JOIN Vaccine_Meta vm ON s.vaccine_id = vm.id
             WHERE s.child_id = $1
             ORDER BY s.due_date ASC
         `, [id]);

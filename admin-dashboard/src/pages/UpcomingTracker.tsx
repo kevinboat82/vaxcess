@@ -23,6 +23,24 @@ const UpcomingTracker: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState<'overdue' | 'dueSoon' | 'future'>('overdue');
+    const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+
+    const handleSendReminder = async (e: React.MouseEvent, scheduleId: string) => {
+        e.stopPropagation();
+        if (!window.confirm('Trigger manual voice outreach for this caregiver?')) return;
+        
+        try {
+            setSendingReminder(scheduleId);
+            await api.post(`/schedule/${scheduleId}/remind`);
+            alert('Voice outreach reminder queued successfully via Africa\'s Talking.');
+        } catch (error: any) {
+            console.error('Failed to send reminder:', error);
+            const errorMsg = error.response?.data?.error || 'Failed to queue voice reminder.';
+            alert(errorMsg);
+        } finally {
+            setSendingReminder(null);
+        }
+    };
 
     const counts = useMemo(() => {
         const list = (schedules || []);
@@ -236,8 +254,16 @@ const UpcomingTracker: React.FC = () => {
                                                             <div className="text-emerald-600 text-[10px] font-mono font-black tracking-widest">{schedule.phone_number}</div>
                                                         </td>
                                                         <td className="px-6 py-5 text-right">
-                                                            <button className="p-2.5 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all border border-transparent hover:border-emerald-100">
-                                                                <Phone className="w-4 h-4" />
+                                                            <button 
+                                                                onClick={(e) => handleSendReminder(e, schedule.schedule_id)}
+                                                                disabled={sendingReminder === schedule.schedule_id}
+                                                                className={`p-2.5 rounded-xl transition-all border ${sendingReminder === schedule.schedule_id ? 'bg-slate-50 text-slate-300' : 'text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100 border-transparent'}`}
+                                                            >
+                                                                {sendingReminder === schedule.schedule_id ? (
+                                                                    <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                                                                ) : (
+                                                                    <Phone className="w-4 h-4" />
+                                                                )}
                                                             </button>
                                                         </td>
                                                     </tr>

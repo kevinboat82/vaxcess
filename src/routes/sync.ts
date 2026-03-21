@@ -3,6 +3,8 @@ import { query } from '../db';
 import { ScheduleRecord, resolveSyncConflict } from '../services/sync-service';
 import { triggerMoMoIncentive } from '../services/incentive-service';
 import { logger } from '../utils/logger';
+import { requireAdmin } from '../middleware/auth';
+import { migrate } from '../scripts/migrate-airtable';
 
 const router = Router();
 
@@ -100,6 +102,29 @@ router.post('/push', async (req, res) => {
     } catch (error) {
         logger.error("Sync push error:", error);
         res.status(500).json({ error: 'Failed to push sync data' });
+    }
+});
+
+/**
+ * @route POST /api/sync/airtable
+ * @desc Trigger a full manual sync from Airtable (Admin only)
+ */
+router.post('/airtable', requireAdmin, async (req, res) => {
+    try {
+        logger.info(`Manual Airtable Sync triggered by admin: ${req.user?.username || 'unknown'}`);
+        
+        const stats = await migrate();
+        
+        res.status(200).json({
+            message: 'Airtable synchronization completed successfully.',
+            stats
+        });
+    } catch (error: any) {
+        logger.error("Airtable sync error:", error);
+        res.status(500).json({ 
+            error: 'Failed to synchronize with Airtable.',
+            details: error.message 
+        });
     }
 });
 
