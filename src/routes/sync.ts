@@ -111,7 +111,7 @@ router.post('/push', async (req, res) => {
  */
 router.post('/airtable', requireAdmin, async (req, res) => {
     try {
-        logger.info(`Manual Airtable Sync triggered by admin: ${req.user?.username || 'unknown'}`);
+        logger.info(`Manual Airtable Sync triggered by admin: ${req.user?.id || 'unknown'}`);
         
         const stats = await migrate();
         
