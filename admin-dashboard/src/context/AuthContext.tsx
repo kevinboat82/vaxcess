@@ -50,6 +50,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('vaxcess_admin_token');
     };
 
+    // Auto-logout after 30 minutes of inactivity
+    React.useEffect(() => {
+        if (!token) return;
+
+        let timeoutId: number;
+        const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 minutes
+
+        const resetTimer = () => {
+            if (timeoutId) window.clearTimeout(timeoutId);
+            timeoutId = window.setTimeout(() => {
+                console.log('Logging out due to inactivity');
+                logout();
+            }, INACTIVITY_LIMIT);
+        };
+
+        // Events to listen for activity
+        const activityEvents = [
+            'mousedown', 'mousemove', 'keypress', 
+            'scroll', 'touchstart', 'click'
+        ];
+
+        // Initialize timer
+        resetTimer();
+
+        // Add event listeners
+        activityEvents.forEach(event => {
+            window.addEventListener(event, resetTimer);
+        });
+
+        return () => {
+            if (timeoutId) window.clearTimeout(timeoutId);
+            activityEvents.forEach(event => {
+                window.removeEventListener(event, resetTimer);
+            });
+        };
+    }, [token]);
+
     return (
         <AuthContext.Provider value={{ token, isAuthenticated: !!token, role, login, logout }}>
             {children}
