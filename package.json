@@ -11,7 +11,9 @@
     "migrate:airtable": "ts-node src/scripts/migrate-airtable.ts",
     "create-admin": "ts-node src/scripts/create-admin.ts",
     "seed": "ts-node src/scripts/seed-data.ts",
-    "init-db": "ts-node src/scripts/init-db.ts"
+    "seed:prod": "node dist/scripts/seed-data.js",
+    "init-db": "ts-node src/scripts/init-db.ts",
+    "init-db:prod": "node dist/scripts/init-db.js"
   },
   "keywords": [],
   "author": "",
