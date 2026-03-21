@@ -5,6 +5,7 @@ import { logger } from '../utils/logger';
 import { requireAuth, requireAdmin } from '../middleware/auth';
 import { triggerMoMoIncentive, verifyIncentiveEligibility } from '../services/incentive-service';
 import { scheduleVoiceReminder } from '../services/voice-service';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
 
@@ -184,7 +185,14 @@ router.patch('/:id/complete', requireAuth, requireAdmin, async (req, res) => {
         const childRes = await client.query(`SELECT caregiver_id FROM Children WHERE id = $1`, [scheduleDetail.child_id]);
         const caregiverId = childRes.rows[0].caregiver_id;
 
-        // 3. Check Eligibility (passing the transaction client)
+        // 3. Create a Visit record first to satisfy Foreign Key constraints
+        const visitId = uuidv4();
+        await client.query(
+            `INSERT INTO Visits (id, child_id) VALUES ($1, $2)`,
+            [visitId, scheduleDetail.child_id]
+        );
+
+        // 4. Check Eligibility (passing the transaction client)
         const MILESTONE_VACCINES = ['v-penta3', 'v-measles1', 'v-measles2'];
         let payoutStatus = 'No payout triggered';
 
@@ -193,7 +201,7 @@ router.patch('/:id/complete', requireAuth, requireAdmin, async (req, res) => {
 
             if (isEligible) {
                 payoutStatus = await triggerMoMoIncentive({
-                    visitId: id,
+                    visitId: visitId,
                     caregiverId: caregiverId,
                     scheduleId: id,
                     amount: 10.00
