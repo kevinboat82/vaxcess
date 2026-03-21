@@ -23,6 +23,14 @@ services:
         generateValue: true
       - key: NODE_ENV
         value: production
+      - key: AIRTABLE_API_KEY
+        sync: false
+      - key: AIRTABLE_BASE_ID
+        sync: false
+      - key: AT_API_KEY
+        sync: false
+      - key: AT_USERNAME
+        sync: false
 
   # React + Vite Frontend
   - type: web
