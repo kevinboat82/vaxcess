@@ -98,4 +98,61 @@ router.get('/workers', requireAuth, requireAdmin, async (req, res) => {
     }
 });
 
+/**
+ * @route PUT /api/auth/workers/:id
+ * @desc Update a health worker's details (username, facility_name, role, optionally password)
+ */
+router.put('/workers/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { username, facility_name, role, password } = req.body;
+
+        if (!username || !facility_name || !role) {
+            return res.status(400).json({ error: 'Username, facility name, and role are required' });
+        }
+
+        if (password && password.trim() !== '') {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            await query(
+                `UPDATE Health_Workers SET username = $1, facility_name = $2, role = $3, password_hash = $4 WHERE id = $5`,
+                [username, facility_name, role, hashedPassword, id]
+            );
+        } else {
+            await query(
+                `UPDATE Health_Workers SET username = $1, facility_name = $2, role = $3 WHERE id = $4`,
+                [username, facility_name, role, id]
+            );
+        }
+
+        res.status(200).json({ message: 'Worker updated successfully' });
+    } catch (error: any) {
+        logger.error('Error updating worker:', error);
+        if (error.code === '23505') {
+            return res.status(409).json({ error: 'Username already exists' });
+        }
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+/**
+ * @route DELETE /api/auth/workers/:id
+ * @desc Delete a health worker
+ */
+router.delete('/workers/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Prevent admin from deleting themselves (assuming req.user contains the authenticated user)
+        if (req.user && req.user.id === id) {
+             return res.status(400).json({ error: 'You cannot delete your own account' });
+        }
+
+        await query(`DELETE FROM Health_Workers WHERE id = $1`, [id]);
+        res.status(200).json({ message: 'Worker deleted successfully' });
+    } catch (error) {
+        logger.error('Error deleting worker:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 export default router;

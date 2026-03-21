@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Users, Activity, Syringe, CalendarClock, PieChart as PieChartIcon, TrendingUp, RefreshCw } from 'lucide-react';
+import { Plus, Search, Users, Activity, Syringe, CalendarClock, PieChart as PieChartIcon, TrendingUp, RefreshCw, Trash2, Settings } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { Layout } from '../components/Layout';
 import { AddWorkerModal } from '../components/AddWorkerModal';
+import { EditWorkerModal } from '../components/EditWorkerModal';
 import api from '../api';
 
 interface SystemMetrics {
@@ -15,7 +16,7 @@ interface SystemMetrics {
     total_vaccines_pending: number;
 }
 
-interface Worker {
+export interface Worker {
     id: string;
     username: string;
     facility_name: string;
@@ -37,7 +38,19 @@ const Dashboard: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isWorkerModalOpen, setIsWorkerModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
     const [isSyncing, setIsSyncing] = useState(false);
+
+    const handleDeleteWorker = async (id: string, username: string) => {
+        if (!window.confirm(`Are you sure you want to delete worker ${username}?`)) return;
+        try {
+            await api.delete(`/auth/workers/${id}`);
+            fetchDashboardData();
+        } catch (error: any) {
+            alert(error.response?.data?.error || 'Failed to delete worker');
+        }
+    };
 
     const handleSyncAirtable = async () => {
         if (!window.confirm('Trigger full synchronization with Airtable? This will refresh all patient records.')) return;
@@ -267,6 +280,13 @@ const Dashboard: React.FC = () => {
                 onSuccess={() => fetchDashboardData()}
             />
 
+            <EditWorkerModal
+                isOpen={isEditModalOpen}
+                worker={selectedWorker}
+                onClose={() => { setIsEditModalOpen(false); setSelectedWorker(null); }}
+                onSuccess={() => fetchDashboardData()}
+            />
+
             {/* Worker Data Table Widget */}
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-8">
                 <div className="overflow-x-auto">
@@ -278,6 +298,7 @@ const Dashboard: React.FC = () => {
                                 <th className="px-6 py-4">Access Role</th>
                                 <th className="px-6 py-4">Facility Name</th>
                                 <th className="px-6 py-4">Registered Date</th>
+                                <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -311,11 +332,27 @@ const Dashboard: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4">{worker.facility_name}</td>
                                         <td className="px-6 py-4 text-slate-500">{new Date(worker.created_at).toLocaleDateString()}</td>
+                                        <td className="px-6 py-4 text-right space-x-2">
+                                            <button
+                                                onClick={() => { setSelectedWorker(worker); setIsEditModalOpen(true); }}
+                                                className="p-1.5 text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 rounded transition-colors"
+                                                title="Edit Worker"
+                                            >
+                                                <Settings className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteWorker(worker.id, worker.username)}
+                                                className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 rounded transition-colors"
+                                                title="Delete Worker"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500 font-medium">
+                                    <td colSpan={6} className="px-6 py-8 text-center text-slate-500 font-medium">
                                         No workers found matching your search.
                                     </td>
                                 </tr>
